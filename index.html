@@ -16,10 +16,13 @@
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--beyaz);font-family:'Segoe UI',system-ui,sans-serif;
-       min-height:100vh;padding-bottom:78px;}
+       min-height:100vh;padding-bottom:112px;}
+  .site-footer{position:fixed;bottom:62px;left:0;right:0;text-align:center;font-size:10px;
+                color:var(--kenar2);padding:6px 10px;background:var(--bg);z-index:4;}
   header{background:var(--panel);padding:16px 16px 14px;border-bottom:1px solid var(--kenar);
          position:sticky;top:0;z-index:5;}
-  header h1{font-size:17px;margin:0;color:var(--turuncu);display:flex;align-items:center;gap:8px;}
+  header h1{font-size:15px;margin:0;color:var(--turuncu);display:flex;align-items:center;gap:10px;line-height:1.3;}
+  header h1 img{width:40px;height:40px;flex-shrink:0;border-radius:50%;}
   header p{margin:4px 0 0;font-size:11px;color:var(--gri);}
   header .imza{margin:6px 0 0;font-size:10px;color:var(--kenar2);letter-spacing:.3px;}
   main{padding:16px;max-width:520px;margin:0 auto;}
@@ -68,6 +71,17 @@
   .kilit-ekran button{margin-top:14px;background:var(--turuncu);color:#1a1200;border:none;
                        border-radius:9px;padding:12px 26px;font-weight:700;font-size:14px;cursor:pointer;}
   .hata{color:var(--kirmizi);font-size:12px;margin-top:8px;min-height:14px;}
+  .mic-btn{width:100%;border:1px dashed var(--turuncu);background:transparent;color:var(--turuncu);
+           border-radius:9px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;
+           display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;}
+  .mic-btn.dinliyor{border-style:solid;background:rgba(232,160,32,.12);animation:pulse 1s infinite;}
+  @keyframes pulse{0%{opacity:1;}50%{opacity:.55;}100%{opacity:1;}}
+  .onay-kutu{display:none;background:rgba(232,160,32,.1);border:1px solid var(--turuncu);
+             border-radius:10px;padding:14px;margin-bottom:12px;text-align:center;}
+  .onay-kutu.gorunur{display:block;}
+  .onay-kutu .sayac{font-size:28px;font-weight:800;color:var(--turuncu);margin:4px 0 10px;}
+  .onay-btns{display:flex;gap:10px;}
+  .onay-btns button{flex:1;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -82,9 +96,7 @@
 </div>
 
 <header>
-  <h1>📢 Amasya Anons Sistemi</h1>
-  <p>T.C. Amasya Valiliği — Mobil Anons Uygulaması</p>
-  <p class="imza">M.Emlak ve İSG Uzmanı Webmaster Salih ÖZGEN</p>
+  <h1><img src="logo.png" alt="Amasya Çevre Şehircilik ve İklim Değişikliği İl Müdürlüğü logosu"> Amasya Çevre, Şehircilik ve İklim Değişikliği İl Müdürlüğü Merkezi Anons Sistemi</h1>
 </header>
 
 <main>
@@ -92,8 +104,19 @@
   <!-- ANONS -->
   <section class="tab aktif" id="tab-anons">
     <div class="kart">
+      <button class="mic-btn" id="micBtn" onclick="sesleYaziyaBasla()">🎤 Sesle Söyle</button>
+
+      <div class="onay-kutu" id="onayKutu">
+        <div style="font-size:13px;color:var(--gri2);">Algılanan metin okunacak</div>
+        <div class="sayac" id="sayacYazi">7</div>
+        <div class="onay-btns">
+          <button style="background:var(--yesil);color:#04250f;" onclick="onayHemenYayinla()">✓ Şimdi Yayınla</button>
+          <button style="background:var(--kirmizi);color:#fff;" onclick="onayIptal()">✗ İptal</button>
+        </div>
+      </div>
+
       <label for="metinKutusu">Anons Metni</label>
-      <textarea id="metinKutusu" placeholder="Anons metnini buraya yazın..."></textarea>
+      <textarea id="metinKutusu" placeholder="Anons metnini buraya yazın veya yukarıdan sesle söyleyin..."></textarea>
 
       <label style="margin-top:14px;">Ses Profili</label>
       <select id="sesSecim"></select>
@@ -146,6 +169,33 @@
   <!-- AYARLAR -->
   <section class="tab" id="tab-ayarlar">
     <div class="kart">
+      <h2 class="baslik">☁️ Yüksek Kaliteli Sesler (ElevenLabs)</h2>
+      <p class="not">Kendi sunucundaki ara katmanı (proxy) tanımla, sonra istediğin kadar ElevenLabs sesi ekle. Eklenen sesler Anons ekranındaki "Ses Profili" listesinde "(Bulut)" etiketiyle görünür.</p>
+
+      <label style="margin-top:12px;">Sunucu Adresi (tts.php)</label>
+      <input type="text" id="bulutUrl" placeholder="https://salihozgen.com/el-tts/tts.php">
+
+      <label style="margin-top:12px;">Sunucu Anahtarı</label>
+      <input type="password" id="bulutSecret" placeholder="config.php içindeki APP_SECRET ile aynı olmalı">
+
+      <div class="satir" style="margin-top:12px;">
+        <button class="btn btn-yesil" onclick="bulutAyarKaydet()">Bağlantıyı Kaydet</button>
+      </div>
+      <div class="durum" id="bulutDurum"></div>
+
+      <div style="margin-top:16px;border-top:1px solid var(--kenar2);padding-top:14px;">
+        <label>Yeni Bulut Sesi Ekle</label>
+        <input type="text" id="yeniSesAd" placeholder="Ses adı (örn. Ahmet - ElevenLabs)" style="margin-bottom:8px;">
+        <input type="text" id="yeniSesId" placeholder="ElevenLabs Voice ID">
+        <div class="satir" style="margin-top:10px;">
+          <button class="btn btn-play" onclick="bulutSesEkle()">+ Ses Ekle</button>
+        </div>
+      </div>
+
+      <div id="bulutSesListesi" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="kart">
       <h2 class="baslik">⚙️ Genel</h2>
       <div class="satir-arasi">
         <label style="margin:0;">🎵 Jingle varsayılan açık</label>
@@ -161,13 +211,15 @@
       <p class="not">
         Amasya Anons Sistemi — masaüstü sürümünün mobil (PWA) uyarlamasıdır.
         Ana ekranınıza eklediğinizde normal bir uygulama gibi simgesiyle açılır ve
-        internet olmadan da arayüzü çalışır (seslendirme için telefonun TTS motoru kullanılır).
+        internet olmadan da arayüzü çalışır (yerel seslendirme için telefonun TTS motoru,
+        bulut seslendirme için ElevenLabs kullanılır).
       </p>
-      <p class="not" style="margin-top:10px;color:var(--gri2);">M.Emlak ve İSG Uzmanı Webmaster Salih ÖZGEN</p>
     </div>
   </section>
 
 </main>
+
+<div class="site-footer">M.Emlak ve İSG Uzmanı Webmaster Salih ÖZGEN</div>
 
 <nav>
   <button class="aktif" data-tab="anons" onclick="sekmeDegistir('anons')"><span class="ic">🎙️</span>Anons</button>
@@ -199,19 +251,33 @@ const ON_TANIMLI_PROFILLER = [
   {ad:"Özel (Ton/Hız Ayarla)",    cinsiyet:"ozel",  pitch:1.0,  rate:1.0},
 ];
 
+function bulutSesleriGetir(){
+  return JSON.parse(localStorage.getItem('bulut_sesler') || '[]');
+}
+
 function sesleriYukle(){
   sistemSesleri = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith('tr'));
   const secim = document.getElementById('sesSecim');
   secim.innerHTML = "";
   ON_TANIMLI_PROFILLER.forEach((p, i) => {
     const opt = document.createElement('option');
-    opt.value = i;
+    opt.value = "local-" + i;
     opt.textContent = p.ad + (sistemSesleri.length===0 ? " ⚠" : "");
     secim.appendChild(opt);
   });
+  bulutSesleriGetir().forEach((s, i) => {
+    const opt = document.createElement('option');
+    opt.value = "cloud-" + i;
+    opt.textContent = s.ad + " (Bulut)";
+    secim.appendChild(opt);
+  });
   secim.onchange = () => {
-    const p = ON_TANIMLI_PROFILLER[secim.value];
-    document.getElementById('ozelAyarlar').style.display = (p.cinsiyet==='ozel') ? 'block' : 'none';
+    if(secim.value.startsWith('local-')){
+      const p = ON_TANIMLI_PROFILLER[secim.value.split('-')[1]];
+      document.getElementById('ozelAyarlar').style.display = (p.cinsiyet==='ozel') ? 'block' : 'none';
+    } else {
+      document.getElementById('ozelAyarlar').style.display = 'none';
+    }
   };
 }
 speechSynthesis.onvoiceschanged = sesleriYukle;
@@ -242,15 +308,178 @@ function toggleJingleVarsayilan(){
   document.getElementById('jingleToggle').classList.toggle('on', jingleAcik);
 }
 
+// ============ Bulut Ses Ayarları (ElevenLabs proxy) ============
+function bulutAyarYukle(){
+  const ayar = JSON.parse(localStorage.getItem('bulut_ayar') || '{}');
+  document.getElementById('bulutUrl').value = ayar.url || '';
+  document.getElementById('bulutSecret').value = ayar.secret || '';
+  bulutListesiCiz();
+}
+
+function bulutAyarKaydet(){
+  const url = document.getElementById('bulutUrl').value.trim();
+  const secret = document.getElementById('bulutSecret').value.trim();
+  localStorage.setItem('bulut_ayar', JSON.stringify({url, secret}));
+  document.getElementById('bulutDurum').textContent = '✔ Bağlantı bilgileri kaydedildi.';
+}
+
+function bulutSesEkle(){
+  const ad = document.getElementById('yeniSesAd').value.trim();
+  const id = document.getElementById('yeniSesId').value.trim();
+  if(!ad || !id){ document.getElementById('bulutDurum').textContent = '⚠ Ses adı ve ID gerekli.'; return; }
+  const liste = bulutSesleriGetir();
+  liste.push({ad, id});
+  localStorage.setItem('bulut_sesler', JSON.stringify(liste));
+  document.getElementById('yeniSesAd').value = '';
+  document.getElementById('yeniSesId').value = '';
+  bulutListesiCiz();
+  sesleriYukle();
+}
+
+function bulutSesSil(i){
+  const liste = bulutSesleriGetir();
+  liste.splice(i, 1);
+  localStorage.setItem('bulut_sesler', JSON.stringify(liste));
+  bulutListesiCiz();
+  sesleriYukle();
+}
+
+function bulutListesiCiz(){
+  const kutu = document.getElementById('bulutSesListesi');
+  const liste = bulutSesleriGetir();
+  if(liste.length === 0){ kutu.innerHTML = ''; return; }
+  kutu.innerHTML = liste.map((s, i) => `
+    <div class="arsiv-item" style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-weight:700;font-size:13px;">${s.ad}</div>
+        <div style="font-size:11px;color:var(--gri);">${s.id}</div>
+      </div>
+      <button style="background:var(--kirmizi);color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;" onclick="bulutSesSil(${i})">Sil</button>
+    </div>`).join('');
+}
+
+// ============ Sesle Söyle (konuş -> yazıya çevir -> 7sn kontrol -> yayınla) ============
+let tanima = null;
+let onayZamanlayici = null;
+let onaySayac = 7;
+
+function sesTanimaDesteği(){
+  return ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window);
+}
+
+function sesleYaziyaBasla(){
+  if(!sesTanimaDesteği()){
+    durumGoster("⚠ Bu tarayıcı sesle yazıya çevirmeyi desteklemiyor. Metni elle yazabilirsiniz.");
+    return;
+  }
+  const micBtn = document.getElementById('micBtn');
+  if(tanima){ tanima.stop(); return; }
+
+  const Tanima = window.SpeechRecognition || window.webkitSpeechRecognition;
+  tanima = new Tanima();
+  tanima.lang = 'tr-TR';
+  tanima.interimResults = true;
+  tanima.continuous = false;
+
+  micBtn.classList.add('dinliyor');
+  micBtn.textContent = '🎤 Dinleniyor... (durdurmak için dokun)';
+  durumGoster("🎤 Konuşun...");
+
+  tanima.onresult = (e) => {
+    let metin = '';
+    for(let i=0; i<e.results.length; i++) metin += e.results[i][0].transcript;
+    document.getElementById('metinKutusu').value = metin;
+  };
+
+  tanima.onerror = (e) => {
+    durumGoster("❌ Ses tanıma hatası: " + e.error);
+    micBtnSifirla();
+  };
+
+  tanima.onend = () => {
+    micBtnSifirla();
+    const metin = document.getElementById('metinKutusu').value.trim();
+    if(metin) onayBaslat();
+  };
+
+  tanima.start();
+}
+
+function micBtnSifirla(){
+  const micBtn = document.getElementById('micBtn');
+  micBtn.classList.remove('dinliyor');
+  micBtn.textContent = '🎤 Sesle Söyle';
+  tanima = null;
+}
+
+function onayBaslat(){
+  onaySayac = 7;
+  document.getElementById('sayacYazi').textContent = onaySayac;
+  document.getElementById('onayKutu').classList.add('gorunur');
+  durumGoster("⏳ 7 saniye içinde otomatik yayınlanacak...");
+  onayZamanlayici = setInterval(() => {
+    onaySayac--;
+    document.getElementById('sayacYazi').textContent = onaySayac;
+    if(onaySayac <= 0){
+      clearInterval(onayZamanlayici);
+      onayGizle();
+      anonsOynat();
+    }
+  }, 1000);
+}
+
+function onayHemenYayinla(){
+  clearInterval(onayZamanlayici);
+  onayGizle();
+  anonsOynat();
+}
+
+function onayIptal(){
+  clearInterval(onayZamanlayici);
+  onayGizle();
+  durumGoster("✗ İptal edildi. Metni düzenleyip elle okutabilirsiniz.");
+}
+
+function onayGizle(){
+  document.getElementById('onayKutu').classList.remove('gorunur');
+}
+
 // ============ Oynatma ============
 let mevcutUtterance = null;
+let bulutAudio = null;
 
 function anonsOynat(){
   const metin = document.getElementById('metinKutusu').value.trim();
   if(!metin){ durumGoster("⚠ Lütfen anons metni girin."); return; }
 
   const secim = document.getElementById('sesSecim');
-  const profil = ON_TANIMLI_PROFILLER[secim.value];
+  const [tur, idx] = secim.value.split('-');
+
+  const jingleCal = (devamEt) => {
+    if(jingleAcik){
+      const jingle = document.getElementById('jingleSes');
+      jingle.currentTime = 0;
+      durumGoster("🎵 Jingle çalıyor...");
+      jingle.play().catch(()=>{});
+      jingle.onended = devamEt;
+      setTimeout(() => { if(!speechSynthesis.speaking && !bulutAudio) devamEt(); }, 2500);
+    } else {
+      devamEt();
+    }
+  };
+
+  if(tur === 'cloud'){
+    const bulutSes = bulutSesleriGetir()[idx];
+    const ayar = JSON.parse(localStorage.getItem('bulut_ayar') || '{}');
+    if(!ayar.url || !ayar.secret){
+      durumGoster("⚠ Önce Ayarlar'dan bulut sunucu bağlantısını kaydedin.");
+      return;
+    }
+    jingleCal(() => bulutSesCal(metin, bulutSes, ayar));
+    return;
+  }
+
+  const profil = ON_TANIMLI_PROFILLER[idx];
   let pitch = profil.pitch, rate = profil.rate;
   if(profil.cinsiyet === 'ozel'){
     pitch = parseFloat(document.getElementById('pitchSlider').value);
@@ -271,22 +500,42 @@ function anonsOynat(){
     speechSynthesis.speak(u);
   };
 
-  if(jingleAcik){
-    const jingle = document.getElementById('jingleSes');
-    jingle.currentTime = 0;
-    durumGoster("🎵 Jingle çalıyor...");
-    jingle.play().catch(()=>{});
-    jingle.onended = konusmayiBaslat;
-    // jingle çalmazsa (bazı tarayıcılar) 2sn sonra yine de devam et
-    setTimeout(() => { if(speechSynthesis.speaking===false && !mevcutUtterance) konusmayiBaslat(); }, 2500);
-  } else {
-    konusmayiBaslat();
+  jingleCal(konusmayiBaslat);
+}
+
+async function bulutSesCal(metin, bulutSes, ayar){
+  durumGoster("☁️ Bulut sesi hazırlanıyor...");
+  try{
+    const yanit = await fetch(ayar.url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ text: metin, voice_id: bulutSes.id, secret: ayar.secret })
+    });
+    if(!yanit.ok){
+      const hataMetni = await yanit.text().catch(()=> '');
+      durumGoster("❌ Bulut ses hatası (" + yanit.status + "): " + hataMetni.slice(0,80));
+      return;
+    }
+    const blob = await yanit.blob();
+    const url = URL.createObjectURL(blob);
+    bulutAudio = new Audio(url);
+    durumGoster("🔊 Anons okunuyor: " + bulutSes.ad + " (Bulut)");
+    bulutAudio.onended = () => {
+      durumGoster("✔ Anons tamamlandı.");
+      arsiveKaydet(metin, bulutSes.ad + " (Bulut)");
+      bulutAudio = null;
+    };
+    bulutAudio.onerror = () => { durumGoster("❌ Ses çalma hatası."); bulutAudio = null; };
+    bulutAudio.play();
+  }catch(e){
+    durumGoster("❌ Sunucuya bağlanılamadı: " + e.message);
   }
 }
 
 function anonsDurdur(){
   speechSynthesis.cancel();
   document.getElementById('jingleSes').pause();
+  if(bulutAudio){ bulutAudio.pause(); bulutAudio = null; }
   durumGoster("■ Durduruldu.");
 }
 
@@ -370,6 +619,7 @@ window.addEventListener('load', () => {
     document.getElementById('pinToggle').classList.add('on');
     document.getElementById('kilitEkrani').classList.remove('gizli');
   }
+  bulutAyarYukle();
 });
 
 // ============ Service worker (PWA / çevrimdışı) ============

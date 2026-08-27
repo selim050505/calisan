@@ -5,7 +5,8 @@ const DOSYALAR = [
   "./manifest.json",
   "./jingle.mp3",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./logo.png"
 ];
 
 self.addEventListener("install", (e) => {

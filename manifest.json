@@ -1,7 +1,7 @@
 {
-  "name": "Amasya Anons Sistemi",
+  "name": "Amasya Çevre Şehircilik ve İklim Değişikliği İl Müdürlüğü Merkezi Anons Sistemi",
   "short_name": "Amasya Anons",
-  "description": "Amasya Valiliği anons seslendirme uygulaması",
+  "description": "Amasya Çevre, Şehircilik ve İklim Değişikliği İl Müdürlüğü anons seslendirme uygulaması",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
