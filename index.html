@@ -168,9 +168,23 @@
 
   <!-- AYARLAR -->
   <section class="tab" id="tab-ayarlar">
-    <div class="kart">
-      <h2 class="baslik">☁️ Yüksek Kaliteli Sesler (ElevenLabs)</h2>
-      <p class="not">Kendi sunucundaki ara katmanı (proxy) tanımla, sonra istediğin kadar ElevenLabs sesi ekle. Eklenen sesler Anons ekranındaki "Ses Profili" listesinde "(Bulut)" etiketiyle görünür.</p>
+
+    <div class="kart" id="adminGirisKart" style="display:none;">
+      <h2 class="baslik">🔒 Yönetici Girişi</h2>
+      <p class="not" id="adminAciklama">Bulut ses ayarlarını yönetmek için şifreni gir.</p>
+      <input type="password" id="adminSifreGiris" placeholder="Yönetici şifresi">
+      <div class="satir" style="margin-top:10px;">
+        <button class="btn btn-play" id="adminGirisBtn" onclick="adminGirisDene()">Giriş Yap</button>
+      </div>
+      <div class="hata" id="adminHata"></div>
+    </div>
+
+    <div class="kart" id="bulutAyarKart" style="display:none;">
+      <div class="satir-arasi" style="margin-bottom:4px;">
+        <h2 class="baslik" style="margin:0;">☁️ Yüksek Kaliteli Sesler (Azure)</h2>
+        <button style="background:none;border:1px solid var(--kenar2);color:var(--gri2);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;" onclick="adminCikisYap()">Çıkış</button>
+      </div>
+      <p class="not">Kendi sunucundaki ara katmanı (proxy) tanımla, sonra istediğin kadar Azure sesi ekle. Eklenen sesler Anons ekranındaki "Ses Profili" listesinde "(Bulut)" etiketiyle görünür.</p>
 
       <label style="margin-top:12px;">Sunucu Adresi (tts.php)</label>
       <input type="text" id="bulutUrl" placeholder="https://salihozgen.com/el-tts/tts.php">
@@ -185,8 +199,8 @@
 
       <div style="margin-top:16px;border-top:1px solid var(--kenar2);padding-top:14px;">
         <label>Yeni Bulut Sesi Ekle</label>
-        <input type="text" id="yeniSesAd" placeholder="Ses adı (örn. Ahmet - ElevenLabs)" style="margin-bottom:8px;">
-        <input type="text" id="yeniSesId" placeholder="ElevenLabs Voice ID">
+        <input type="text" id="yeniSesAd" placeholder="Ses adı (örn. Ahmet - Azure)" style="margin-bottom:8px;">
+        <input type="text" id="yeniSesId" placeholder="Azure Ses Adı (örn. tr-TR-AhmetNeural)">
         <div class="satir" style="margin-top:10px;">
           <button class="btn btn-play" onclick="bulutSesEkle()">+ Ses Ekle</button>
         </div>
@@ -212,7 +226,7 @@
         Amasya Anons Sistemi — masaüstü sürümünün mobil (PWA) uyarlamasıdır.
         Ana ekranınıza eklediğinizde normal bir uygulama gibi simgesiyle açılır ve
         internet olmadan da arayüzü çalışır (yerel seslendirme için telefonun TTS motoru,
-        bulut seslendirme için ElevenLabs kullanılır).
+        bulut seslendirme için Azure kullanılır).
       </p>
     </div>
   </section>
@@ -308,7 +322,75 @@ function toggleJingleVarsayilan(){
   document.getElementById('jingleToggle').classList.toggle('on', jingleAcik);
 }
 
-// ============ Bulut Ses Ayarları (ElevenLabs proxy) ============
+// ============ Yönetici Girişi (bulut ses ayarlarını gizler) ============
+let adminYetkiliBuOturum = false;
+
+async function sha256Hex(metin){
+  const veri = new TextEncoder().encode(metin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', veri);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function adminHashiVarMi(){
+  return !!localStorage.getItem('admin_sifre_hash');
+}
+
+async function adminGirisDene(){
+  const girilen = document.getElementById('adminSifreGiris').value;
+  const hataKutu = document.getElementById('adminHata');
+  if(!girilen || girilen.length < 4){
+    hataKutu.textContent = '⚠ Şifre en az 4 karakter olmalı.';
+    return;
+  }
+  if(!adminHashiVarMi()){
+    // İlk kurulum: bu şifreyi kaydet
+    const yeniHash = await sha256Hex(girilen);
+    localStorage.setItem('admin_sifre_hash', yeniHash);
+    adminGirisiTamamla();
+    return;
+  }
+  const girilenHash = await sha256Hex(girilen);
+  const kayitliHash = localStorage.getItem('admin_sifre_hash');
+  if(girilenHash === kayitliHash){
+    adminGirisiTamamla();
+  } else {
+    hataKutu.textContent = '❌ Hatalı şifre.';
+  }
+}
+
+function adminGirisiTamamla(){
+  adminYetkiliBuOturum = true;
+  document.getElementById('adminGirisKart').style.display = 'none';
+  document.getElementById('bulutAyarKart').style.display = 'block';
+  document.getElementById('adminSifreGiris').value = '';
+  document.getElementById('adminHata').textContent = '';
+}
+
+function adminCikisYap(){
+  adminYetkiliBuOturum = false;
+  document.getElementById('bulutAyarKart').style.display = 'none';
+  document.getElementById('adminGirisKart').style.display = 'block';
+}
+
+function adminEkraniniAyarla(){
+  const hashVar = window.location.hash === '#admin';
+  if(!hashVar){
+    document.getElementById('adminGirisKart').style.display = 'none';
+    document.getElementById('bulutAyarKart').style.display = 'none';
+    return;
+  }
+  if(adminYetkiliBuOturum){
+    document.getElementById('bulutAyarKart').style.display = 'block';
+    return;
+  }
+  document.getElementById('adminGirisKart').style.display = 'block';
+  document.getElementById('adminAciklama').textContent = adminHashiVarMi()
+    ? 'Bulut ses ayarlarını yönetmek için şifreni gir.'
+    : 'İlk kurulum: yönetici şifresi belirle (bunu unutma).';
+}
+window.addEventListener('hashchange', adminEkraniniAyarla);
+
+// ============ Bulut Ses Ayarları (Azure proxy) ============
 function bulutAyarYukle(){
   const ayar = JSON.parse(localStorage.getItem('bulut_ayar') || '{}');
   document.getElementById('bulutUrl').value = ayar.url || '';
@@ -620,6 +702,7 @@ window.addEventListener('load', () => {
     document.getElementById('kilitEkrani').classList.remove('gizli');
   }
   bulutAyarYukle();
+  adminEkraniniAyarla();
 });
 
 // ============ Service worker (PWA / çevrimdışı) ============
