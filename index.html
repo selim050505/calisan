@@ -168,47 +168,6 @@
 
   <!-- AYARLAR -->
   <section class="tab" id="tab-ayarlar">
-
-    <div class="kart" id="adminGirisKart" style="display:none;">
-      <h2 class="baslik">🔒 Yönetici Girişi</h2>
-      <p class="not" id="adminAciklama">Bulut ses ayarlarını yönetmek için şifreni gir.</p>
-      <input type="password" id="adminSifreGiris" placeholder="Yönetici şifresi">
-      <div class="satir" style="margin-top:10px;">
-        <button class="btn btn-play" id="adminGirisBtn" onclick="adminGirisDene()">Giriş Yap</button>
-      </div>
-      <div class="hata" id="adminHata"></div>
-    </div>
-
-    <div class="kart" id="bulutAyarKart" style="display:none;">
-      <div class="satir-arasi" style="margin-bottom:4px;">
-        <h2 class="baslik" style="margin:0;">☁️ Yüksek Kaliteli Sesler (Azure)</h2>
-        <button style="background:none;border:1px solid var(--kenar2);color:var(--gri2);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;" onclick="adminCikisYap()">Çıkış</button>
-      </div>
-      <p class="not">Kendi sunucundaki ara katmanı (proxy) tanımla, sonra istediğin kadar Azure sesi ekle. Eklenen sesler Anons ekranındaki "Ses Profili" listesinde "(Bulut)" etiketiyle görünür.</p>
-
-      <label style="margin-top:12px;">Sunucu Adresi (tts.php)</label>
-      <input type="text" id="bulutUrl" placeholder="https://salihozgen.com/el-tts/tts.php">
-
-      <label style="margin-top:12px;">Sunucu Anahtarı</label>
-      <input type="password" id="bulutSecret" placeholder="config.php içindeki APP_SECRET ile aynı olmalı">
-
-      <div class="satir" style="margin-top:12px;">
-        <button class="btn btn-yesil" onclick="bulutAyarKaydet()">Bağlantıyı Kaydet</button>
-      </div>
-      <div class="durum" id="bulutDurum"></div>
-
-      <div style="margin-top:16px;border-top:1px solid var(--kenar2);padding-top:14px;">
-        <label>Yeni Bulut Sesi Ekle</label>
-        <input type="text" id="yeniSesAd" placeholder="Ses adı (örn. Ahmet - Azure)" style="margin-bottom:8px;">
-        <input type="text" id="yeniSesId" placeholder="Azure Ses Adı (örn. tr-TR-AhmetNeural)">
-        <div class="satir" style="margin-top:10px;">
-          <button class="btn btn-play" onclick="bulutSesEkle()">+ Ses Ekle</button>
-        </div>
-      </div>
-
-      <div id="bulutSesListesi" style="margin-top:12px;"></div>
-    </div>
-
     <div class="kart">
       <h2 class="baslik">⚙️ Genel</h2>
       <div class="satir-arasi">
@@ -320,124 +279,6 @@ function toggleJingleVarsayilan(){
   jingleAcik = !jingleAcik;
   document.getElementById('jingleVarsayilanToggle').classList.toggle('on', jingleAcik);
   document.getElementById('jingleToggle').classList.toggle('on', jingleAcik);
-}
-
-// ============ Yönetici Girişi (bulut ses ayarlarını gizler) ============
-let adminYetkiliBuOturum = false;
-
-async function sha256Hex(metin){
-  const veri = new TextEncoder().encode(metin);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', veri);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-function adminHashiVarMi(){
-  return !!localStorage.getItem('admin_sifre_hash');
-}
-
-async function adminGirisDene(){
-  const girilen = document.getElementById('adminSifreGiris').value;
-  const hataKutu = document.getElementById('adminHata');
-  if(!girilen || girilen.length < 4){
-    hataKutu.textContent = '⚠ Şifre en az 4 karakter olmalı.';
-    return;
-  }
-  if(!adminHashiVarMi()){
-    // İlk kurulum: bu şifreyi kaydet
-    const yeniHash = await sha256Hex(girilen);
-    localStorage.setItem('admin_sifre_hash', yeniHash);
-    adminGirisiTamamla();
-    return;
-  }
-  const girilenHash = await sha256Hex(girilen);
-  const kayitliHash = localStorage.getItem('admin_sifre_hash');
-  if(girilenHash === kayitliHash){
-    adminGirisiTamamla();
-  } else {
-    hataKutu.textContent = '❌ Hatalı şifre.';
-  }
-}
-
-function adminGirisiTamamla(){
-  adminYetkiliBuOturum = true;
-  document.getElementById('adminGirisKart').style.display = 'none';
-  document.getElementById('bulutAyarKart').style.display = 'block';
-  document.getElementById('adminSifreGiris').value = '';
-  document.getElementById('adminHata').textContent = '';
-}
-
-function adminCikisYap(){
-  adminYetkiliBuOturum = false;
-  document.getElementById('bulutAyarKart').style.display = 'none';
-  document.getElementById('adminGirisKart').style.display = 'block';
-}
-
-function adminEkraniniAyarla(){
-  const hashVar = window.location.hash === '#admin';
-  if(!hashVar){
-    document.getElementById('adminGirisKart').style.display = 'none';
-    document.getElementById('bulutAyarKart').style.display = 'none';
-    return;
-  }
-  if(adminYetkiliBuOturum){
-    document.getElementById('bulutAyarKart').style.display = 'block';
-    return;
-  }
-  document.getElementById('adminGirisKart').style.display = 'block';
-  document.getElementById('adminAciklama').textContent = adminHashiVarMi()
-    ? 'Bulut ses ayarlarını yönetmek için şifreni gir.'
-    : 'İlk kurulum: yönetici şifresi belirle (bunu unutma).';
-}
-window.addEventListener('hashchange', adminEkraniniAyarla);
-
-// ============ Bulut Ses Ayarları (Azure proxy) ============
-function bulutAyarYukle(){
-  const ayar = JSON.parse(localStorage.getItem('bulut_ayar') || '{}');
-  document.getElementById('bulutUrl').value = ayar.url || '';
-  document.getElementById('bulutSecret').value = ayar.secret || '';
-  bulutListesiCiz();
-}
-
-function bulutAyarKaydet(){
-  const url = document.getElementById('bulutUrl').value.trim();
-  const secret = document.getElementById('bulutSecret').value.trim();
-  localStorage.setItem('bulut_ayar', JSON.stringify({url, secret}));
-  document.getElementById('bulutDurum').textContent = '✔ Bağlantı bilgileri kaydedildi.';
-}
-
-function bulutSesEkle(){
-  const ad = document.getElementById('yeniSesAd').value.trim();
-  const id = document.getElementById('yeniSesId').value.trim();
-  if(!ad || !id){ document.getElementById('bulutDurum').textContent = '⚠ Ses adı ve ID gerekli.'; return; }
-  const liste = bulutSesleriGetir();
-  liste.push({ad, id});
-  localStorage.setItem('bulut_sesler', JSON.stringify(liste));
-  document.getElementById('yeniSesAd').value = '';
-  document.getElementById('yeniSesId').value = '';
-  bulutListesiCiz();
-  sesleriYukle();
-}
-
-function bulutSesSil(i){
-  const liste = bulutSesleriGetir();
-  liste.splice(i, 1);
-  localStorage.setItem('bulut_sesler', JSON.stringify(liste));
-  bulutListesiCiz();
-  sesleriYukle();
-}
-
-function bulutListesiCiz(){
-  const kutu = document.getElementById('bulutSesListesi');
-  const liste = bulutSesleriGetir();
-  if(liste.length === 0){ kutu.innerHTML = ''; return; }
-  kutu.innerHTML = liste.map((s, i) => `
-    <div class="arsiv-item" style="display:flex;justify-content:space-between;align-items:center;">
-      <div>
-        <div style="font-weight:700;font-size:13px;">${s.ad}</div>
-        <div style="font-size:11px;color:var(--gri);">${s.id}</div>
-      </div>
-      <button style="background:var(--kirmizi);color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;" onclick="bulutSesSil(${i})">Sil</button>
-    </div>`).join('');
 }
 
 // ============ Sesle Söyle (konuş -> yazıya çevir -> 7sn kontrol -> yayınla) ============
@@ -701,8 +542,6 @@ window.addEventListener('load', () => {
     document.getElementById('pinToggle').classList.add('on');
     document.getElementById('kilitEkrani').classList.remove('gizli');
   }
-  bulutAyarYukle();
-  adminEkraniniAyarla();
 });
 
 // ============ Service worker (PWA / çevrimdışı) ============
