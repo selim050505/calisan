@@ -1,1 +1,194 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yönetici — Amasya Anons</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --bg:#0b1220; --panel:#111927; --kart:#162032; --kenar:#1e3050; --kenar2:#2a4060;
+    --turuncu:#e8a020; --gri:#8899aa; --gri2:#aabbcc; --beyaz:#ddeeff; --kirmizi:#e84040; --yesil:#28c76f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--beyaz);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:20px;}
+  .kap{max-width:480px;margin:0 auto;}
+  h1{font-size:18px;color:var(--turuncu);margin:0 0 20px;}
+  .kart{background:var(--kart);border:1px solid var(--kenar);border-radius:12px;padding:18px;margin-bottom:16px;}
+  label{font-size:12px;color:var(--gri2);font-weight:600;display:block;margin:12px 0 6px;}
+  label:first-child{margin-top:0;}
+  input{width:100%;background:var(--panel);color:var(--beyaz);border:1px solid var(--kenar2);
+        border-radius:8px;padding:10px;font-size:14px;font-family:inherit;}
+  button{border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-top:12px;}
+  .btn-turuncu{background:var(--turuncu);color:#1a1200;}
+  .btn-yesil{background:var(--yesil);color:#04250f;}
+  .btn-kirmizi{background:var(--kirmizi);color:#fff;width:auto;margin:0;padding:6px 10px;font-size:11px;}
+  .btn-gri{background:transparent;color:var(--gri2);border:1px solid var(--kenar2);}
+  .not{font-size:11px;color:var(--gri);line-height:1.5;margin-top:8px;}
+  .hata{color:var(--kirmizi);font-size:12px;margin-top:8px;min-height:14px;}
+  .durum{font-size:12px;color:var(--gri2);margin-top:8px;min-height:14px;}
+  .ses-item{background:var(--panel);border:1px solid var(--kenar);border-radius:8px;padding:10px 12px;
+             margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
+  .ses-item div div:first-child{font-weight:700;font-size:13px;}
+  .ses-item div div:last-child{font-size:11px;color:var(--gri);}
+  .gizli{display:none;}
+</style>
+</head>
+<body>
+<div class="kap">
+  <h1>🔒 Amasya Anons — Yönetici</h1>
 
+  <div class="kart" id="girisKart">
+    <label>Yönetici Şifresi</label>
+    <input type="password" id="sifreGiris" placeholder="Şifreni gir">
+    <button class="btn-turuncu" onclick="girisDene()">Giriş Yap</button>
+    <div class="hata" id="girisHata"></div>
+    <p class="not" id="girisAciklama"></p>
+  </div>
+
+  <div class="gizli" id="yonetimAlani">
+    <div class="kart">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 style="font-size:15px;color:var(--turuncu);margin:0;">☁️ Bulut Ses Sunucusu</h2>
+        <button class="btn-kirmizi" onclick="cikisYap()">Çıkış</button>
+      </div>
+      <p class="not">Bu ayarlar, ana uygulamayla aynı tarayıcı/telefonda paylaşılır (aynı GitHub Pages sitesi içinde farklı bir sayfadayız).</p>
+
+      <label>Sunucu Adresi (tts.php)</label>
+      <input type="text" id="bulutUrl" placeholder="https://salihozgen.com/el-tts/tts.php">
+
+      <label>Sunucu Anahtarı</label>
+      <input type="password" id="bulutSecret" placeholder="config.php içindeki APP_SECRET ile aynı olmalı">
+
+      <button class="btn-yesil" onclick="ayarKaydet()">Bağlantıyı Kaydet</button>
+      <div class="durum" id="ayarDurum"></div>
+    </div>
+
+    <div class="kart">
+      <h2 style="font-size:15px;color:var(--turuncu);margin:0 0 10px;">Yeni Bulut Sesi Ekle</h2>
+      <label>Ses Adı</label>
+      <input type="text" id="yeniSesAd" placeholder="örn. Ahmet - Azure">
+      <label>Azure Ses Adı</label>
+      <input type="text" id="yeniSesId" placeholder="örn. tr-TR-AhmetNeural">
+      <button class="btn-turuncu" onclick="sesEkle()">+ Ses Ekle</button>
+      <div id="sesListesi"></div>
+    </div>
+
+    <div class="kart">
+      <h2 style="font-size:15px;color:var(--turuncu);margin:0 0 10px;">Şifre Değiştir</h2>
+      <label>Yeni Şifre</label>
+      <input type="password" id="yeniSifre" placeholder="En az 4 karakter">
+      <button class="btn-gri" onclick="sifreDegistir()">Şifreyi Güncelle</button>
+      <div class="durum" id="sifreDurum"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function sha256Hex(metin){
+  const veri = new TextEncoder().encode(metin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', veri);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function hashVarMi(){ return !!localStorage.getItem('admin_sifre_hash'); }
+
+function girisEkraniniHazirla(){
+  document.getElementById('girisAciklama').textContent = hashVarMi()
+    ? '' : 'İlk kurulum: burada belirlediğin şifreyi unutma.';
+}
+girisEkraniniHazirla();
+
+async function girisDene(){
+  const girilen = document.getElementById('sifreGiris').value;
+  const hataKutu = document.getElementById('girisHata');
+  if(!girilen || girilen.length < 4){
+    hataKutu.textContent = '⚠ Şifre en az 4 karakter olmalı.';
+    return;
+  }
+  if(!hashVarMi()){
+    localStorage.setItem('admin_sifre_hash', await sha256Hex(girilen));
+    girisiTamamla();
+    return;
+  }
+  const girilenHash = await sha256Hex(girilen);
+  if(girilenHash === localStorage.getItem('admin_sifre_hash')){
+    girisiTamamla();
+  } else {
+    hataKutu.textContent = '❌ Hatalı şifre.';
+  }
+}
+
+function girisiTamamla(){
+  document.getElementById('girisKart').classList.add('gizli');
+  document.getElementById('yonetimAlani').classList.remove('gizli');
+  ayarYukle();
+}
+
+function cikisYap(){
+  document.getElementById('yonetimAlani').classList.add('gizli');
+  document.getElementById('girisKart').classList.remove('gizli');
+  document.getElementById('sifreGiris').value = '';
+  girisEkraniniHazirla();
+}
+
+async function sifreDegistir(){
+  const yeni = document.getElementById('yeniSifre').value;
+  const durum = document.getElementById('sifreDurum');
+  if(!yeni || yeni.length < 4){
+    durum.textContent = '⚠ En az 4 karakter olmalı.';
+    return;
+  }
+  localStorage.setItem('admin_sifre_hash', await sha256Hex(yeni));
+  document.getElementById('yeniSifre').value = '';
+  durum.textContent = '✔ Şifre güncellendi.';
+}
+
+// ============ Bulut ses ayarları (ana uygulamayla aynı localStorage anahtarları) ============
+function ayarYukle(){
+  const ayar = JSON.parse(localStorage.getItem('bulut_ayar') || '{}');
+  document.getElementById('bulutUrl').value = ayar.url || '';
+  document.getElementById('bulutSecret').value = ayar.secret || '';
+  sesListesiCiz();
+}
+
+function ayarKaydet(){
+  const url = document.getElementById('bulutUrl').value.trim();
+  const secret = document.getElementById('bulutSecret').value.trim();
+  localStorage.setItem('bulut_ayar', JSON.stringify({url, secret}));
+  document.getElementById('ayarDurum').textContent = '✔ Kaydedildi.';
+}
+
+function sesleriGetir(){ return JSON.parse(localStorage.getItem('bulut_sesler') || '[]'); }
+
+function sesEkle(){
+  const ad = document.getElementById('yeniSesAd').value.trim();
+  const id = document.getElementById('yeniSesId').value.trim();
+  if(!ad || !id) return;
+  const liste = sesleriGetir();
+  liste.push({ad, id});
+  localStorage.setItem('bulut_sesler', JSON.stringify(liste));
+  document.getElementById('yeniSesAd').value = '';
+  document.getElementById('yeniSesId').value = '';
+  sesListesiCiz();
+}
+
+function sesSil(i){
+  const liste = sesleriGetir();
+  liste.splice(i, 1);
+  localStorage.setItem('bulut_sesler', JSON.stringify(liste));
+  sesListesiCiz();
+}
+
+function sesListesiCiz(){
+  const kutu = document.getElementById('sesListesi');
+  const liste = sesleriGetir();
+  kutu.innerHTML = liste.map((s, i) => `
+    <div class="ses-item">
+      <div><div>${s.ad}</div><div>${s.id}</div></div>
+      <button class="btn-kirmizi" onclick="sesSil(${i})">Sil</button>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
