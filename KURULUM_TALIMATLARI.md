@@ -80,6 +80,24 @@ izin vermeniz gerekir.
 
 ---
 
+## Ses Kütüphanesi (kendi sesinizle sabit kayıtlar)
+
+Yeni eklenen "📚 Kütüphane" sekmesinden, kendi (veya izinli birinin) sesiyle anons
+cümleleri kaydedebilirsiniz. Bu, yapay zeka seslendirmesi değildir — gerçek ses
+kaydını telefonda saklar, istediğiniz zaman aynen çalar.
+
+Nasıl çalışır:
+1. Kütüphane sekmesinde "Kayda Başla"ya dokunun, mikrofon izni isteyecektir.
+2. Anons cümlenizi net bir şekilde okuyun, "Durdur"a basın.
+3. Kayda bir isim verin (örn. "Toplantı Duyurusu"), "Kaydet"e basın.
+4. Listeden istediğiniz zaman "▶ Çal" ile aynen çalabilir, "🗑 Sil" ile silebilirsiniz.
+
+Kayıtlar telefonda (tarayıcının IndexedDB deposunda) saklanır — internet gerektirmez,
+sınırsızdır, hiçbir API/ödeme/kota derdi yoktur. Tek dezavantajı: yeni bir anons metni
+söylemeniz gerektiğinde (TTS'in aksine) yeniden kayıt yapmanız gerekir.
+
+---
+
 ## Yüksek Kaliteli Bulut Sesleri (ElevenLabs) — salihozgen.com üzerinden
 
 Telefonun kendi TTS motoru sınırlıysa, kendi sunucunda (salihozgen.com) çalışan gizli bir
